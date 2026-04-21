@@ -1,0 +1,56 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+wheels/
+*.whl
+*.tar.gz
+
+# Test & coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+
+# Mypy / type checker caches
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+
+# IDE / editor state
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Runtime sentinels (structural suffix match — do not narrow to a scheme prefix)
+*_done
+
+# Timestamped backups (retention handled by server-side cron)
+*.bak_*
+
+# Local secrets / env overrides (should NEVER land in source; belt-and-suspenders)
+.env
+.env.*
+!.env.example
+
+# Attestation artifacts (produced by CI, not checked in)
+*.publish.attestation
+*.sigstore
