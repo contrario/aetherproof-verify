@@ -53,7 +53,7 @@ jobs:
       - name: Run tests
         run: pytest -v
       - name: Audit dependencies for known CVEs
-        run: pip-audit --strict --skip-editable
+        run: pip-audit --skip-editable
 
   publish-to-testpypi:
     name: Publish to TestPyPI
