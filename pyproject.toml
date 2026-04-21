@@ -51,6 +51,7 @@ dev = [
     "build>=1.2",
     "pip-audit>=2.7",
     "ruff>=0.6",
+    "rfc8785>=0.1.4,<0.2",
 ]
 
 [project.scripts]
@@ -94,3 +95,4 @@ ignore = ["S101"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S"]
+"tools/*" = ["S"]

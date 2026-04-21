@@ -119,3 +119,29 @@ def test_schema_parity_fingerprint_locked():
         "Either server authoritative schema changed (update mirror + this pin), "
         "or mirror was edited (revert or bump schema_version)."
     )
+
+
+def test_canonicalizer_differential_jcs_vs_rfc8785(unsigned_manifest_dict):
+    """Differential oracle: jcs and rfc8785 must produce byte-identical
+    canonical output for AetherProof manifests.
+
+    Scope note: AetherProof schema has no float fields, so this test does NOT
+    exercise the RFC 8785 number-serialization edge cases (Grisu2/Ryu rounding,
+    IEEE 754 boundaries) where canonicalizer implementations are known to
+    diverge. If either library regresses on the subset our signing path
+    actually produces, CI fails before release.
+    """
+    import jcs
+    import rfc8785
+
+    m = AetherProofManifest.model_validate(unsigned_manifest_dict)
+    dumped = m.model_dump(mode="json", exclude={"signature"})
+
+    out_jcs = jcs.canonicalize(dumped)
+    out_rfc = rfc8785.dumps(dumped)
+
+    assert out_jcs == out_rfc, (
+        "canonicalizer divergence on AetherProof manifest: "
+        f"jcs={len(out_jcs)}B sha256[:16]={hashlib.sha256(out_jcs).hexdigest()[:16]} | "
+        f"rfc8785={len(out_rfc)}B sha256[:16]={hashlib.sha256(out_rfc).hexdigest()[:16]}"
+    )
