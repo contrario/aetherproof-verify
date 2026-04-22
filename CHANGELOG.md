@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `tools/smoke_ingest.py` - end-to-end signing-chain integrity smoke test.
+  Synthetic POST /ingest -> GET /manifests -> offline CLI verify. Codifies
+  the Day 9 Phase-3 dep-upgrade procedure as a reusable tool (closes TD8-beta).
+  stdlib only; asserts `public_key_fpr` byte-wise against on-disk fingerprint.
+
 ### Changed
 - Replaced `test_schema_parity_fingerprint_locked` with
   `test_canonical_bytes_fixture_roundtrip`. The new test asserts byte-identity
