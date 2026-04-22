@@ -91,33 +91,53 @@ def test_file_error_when_manifest_missing(keypair, tmp_path):
     assert check(missing, k_path, expected_fpr=None) == EXIT_FILE_ERROR
 
 
-def test_schema_parity_fingerprint_locked():
-    """Drift-guard: mirror schema MUST hash to locked value.
+def test_canonical_bytes_fixture_roundtrip():
+    """Pydantic-version-invariant parity guard.
 
-    If this fails, EITHER the server-side authoritative schema moved (and this
-    mirror must be updated), OR the mirror was edited unintentionally. Bump
-    `aetherproof-v1` to `aetherproof-v2` before changing this value.
+    Loads the Day-7-locked canonical-bytes fixture, re-parses via
+    ``AetherProofManifest``, re-canonicalizes via ``jcs``, asserts
+    byte-identical output. Replaces the prior schema-fingerprint test
+    which asserted on ``model_json_schema()`` output and was fragile to
+    Pydantic minor-version changes (H25 / TD6-mu1).
 
-    Recompute expected hash after an intentional schema change:
+    Defense-in-depth:
+      1. Pre-check: ``sha256(fixture_bytes) == pinned Day-7 invariant``.
+      2. Main check: parse -> ``model_dump(exclude={"signature"})``
+         -> ``jcs.canonicalize`` yields bytes equal to the fixture.
 
-        import hashlib, json
-        from aetherproof_verify.schema import AetherProofManifest
-        schema = AetherProofManifest.model_json_schema()
-        sep = (",", ":")
-        canon = json.dumps(schema, sort_keys=True, separators=sep)
-        print(hashlib.sha256(canon.encode()).hexdigest())
+    Bump ``aetherproof-v1`` to ``aetherproof-v2`` and regenerate the
+    fixture via the mu1 parity tool before changing the pinned sha.
     """
-    expected = "fd1bcc4080a44d7147068612008a4fb3a0a2b03f9dd32a233fde3a8ae93537a4"
-    canonical = json.dumps(
-        AetherProofManifest.model_json_schema(),
-        sort_keys=True,
-        separators=(",", ":"),
+    from pathlib import Path
+
+    import jcs
+
+    expected_sha = (
+        "b30135afe126440e9e3eb000bd0cdd68d1f2060d7a80a89aff2e57231ca9521f"
     )
-    actual = hashlib.sha256(canonical.encode()).hexdigest()
-    assert actual == expected, (
-        f"Mirror schema drifted. Expected {expected}, got {actual}. "
-        "Either server authoritative schema changed (update mirror + this pin), "
-        "or mirror was edited (revert or bump schema_version)."
+    fixture_path = (
+        Path(__file__).resolve().parent.parent
+        / "tools" / "fixtures" / "parity_fixture_v1.json"
+    )
+
+    fixture_bytes = fixture_path.read_bytes()
+    actual_sha = hashlib.sha256(fixture_bytes).hexdigest()
+    assert actual_sha == expected_sha, (
+        f"Fixture bytes drifted. Expected {expected_sha}, got {actual_sha}. "
+        "Either fixture was edited (revert) or mu1 parity tool produced a "
+        "new canonical form (update pin + bump schema_version)."
+    )
+
+    manifest_dict = json.loads(fixture_bytes)
+    model = AetherProofManifest.model_validate(manifest_dict)
+    redumped = model.model_dump(mode="json", exclude={"signature"})
+    recanonicalized = jcs.canonicalize(redumped)
+
+    assert recanonicalized == fixture_bytes, (
+        f"Canonical round-trip drifted. "
+        f"fixture {len(fixture_bytes)}B sha={actual_sha[:16]} vs "
+        f"recomputed {len(recanonicalized)}B "
+        f"sha={hashlib.sha256(recanonicalized).hexdigest()[:16]}"
     )
 
 
